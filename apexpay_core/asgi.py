@@ -1,5 +1,5 @@
 """
-ASGI config for fintech_api project.
+ASGI config for apexpay_core project.
 
 It exposes the ASGI callable as a module-level variable named ``application``.
 
@@ -11,6 +11,8 @@ import os
 
 from django.core.asgi import get_asgi_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'fintech_api.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'apexpay_core.settings')
+
+
 
 application = get_asgi_application()

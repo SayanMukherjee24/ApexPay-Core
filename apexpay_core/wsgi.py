@@ -1,5 +1,5 @@
 """
-WSGI config for fintech_api project.
+WSGI config for apexpay_core project.
 
 It exposes the WSGI callable as a module-level variable named ``application``.
 
@@ -10,10 +10,11 @@ https://docs.djangoproject.com/en/4.0/howto/deployment/wsgi/
 import os
 
 from django.core.wsgi import get_wsgi_application
-# HOSTNAME = "fintech-app.azurewebsites.net"
+# HOSTNAME = "apexpay_core.azurewebsites.net"
 
-# settings_module = 'fintech_api.deployment' if HOSTNAME in os.environ else 'fintech_api.settings'
+# settings_module = 'apexpay_core.deployment' if HOSTNAME in os.environ else 'apexpay_core.settings'
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'fintech_api.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'apexpay_core.settings')
+
 
 application = get_wsgi_application()
