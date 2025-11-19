@@ -223,16 +223,4 @@ SWAGGER_SETTINGS = {
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# AUTO CREATE SUPERUSER IN PRODUCTION (remove after first deploy)
-import os
-from django.contrib.auth import get_user_model
-
-if os.environ.get("RENDER") == "true":  # only runs on Render
-    User = get_user_model()
-    if not User.objects.filter(username="admin").exists():
-        User.objects.create_superuser(
-            username="admin",
-            email="admin@example.com",
-            password="ApexAdmin123!"
-        )
 
