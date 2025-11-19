@@ -60,7 +60,7 @@ soupsieve==2.4
 sqlparse==0.5.3
 tomli==2.0.1
 typing_extensions==4.8.0
-tzdata==2022.1
+tzdata>=2022.7
 uritemplate==4.1.1
 urllib3==1.26.9
 virtualenv==20.17.1
