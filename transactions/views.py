@@ -16,37 +16,50 @@ from rest_framework.permissions import IsAuthenticated
 class DepositView(GenericAPIView):
     serializer_class = TransactionSerializer
     permission_classes = [IsAuthenticated]
-    
+
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
-        
+
         if serializer.is_valid():
-            user = get_object_or_404(User, pk=request.user.pk)
-            serializer.validated_data["user"] = user
-            transaction_type = serializer.validated_data.get("transaction_type")
+            user = request.user
             amount = serializer.validated_data.get("amount")
-            user_wallet = Wallet.objects.get(user=user)
 
-            transaction_status = Transaction.objects.filter(user=user, transaction_type="deposit")
-            last_tx = transaction_status.last()
-            current_status = last_tx.status if last_tx else None
+            # Auto-set transaction type
+            transaction_type = "deposit"
 
-            if current_status == "pending":
+            # Get or create user's wallet
+            user_wallet, _ = Wallet.objects.get_or_create(user=user)
+
+            # Check last deposit status
+            last_tx = Transaction.objects.filter(
+                user=user, transaction_type="deposit"
+            ).last()
+
+            if last_tx and last_tx.status == "pending":
                 return Response(
                     {"message": "You have a pending transaction. Contact support."},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            if transaction_type == "deposit":
-                user_wallet.available_amount += amount
-                user_wallet.save()
-                Transaction.objects.create(**serializer.validated_data)
-                return Response({"message": "Transaction successful"}, status=status.HTTP_201_CREATED)
+            # Update wallet
+            user_wallet.available_amount += amount
+            user_wallet.save()
+
+            # Create transaction
+            Transaction.objects.create(
+                user=user,
+                transaction_type=transaction_type,
+                amount=amount,
+                status="processed"   # IMPORTANT: no pending by default
+            )
 
             return Response(
-                {"message": "Invalid transaction type for deposit."},
-                status=status.HTTP_400_BAD_REQUEST
+                {"message": "Transaction successful"},
+                status=status.HTTP_201_CREATED
             )
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 class WithdrawView(GenericAPIView):
