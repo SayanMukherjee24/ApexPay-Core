@@ -2,7 +2,7 @@ services:
   - type: web
     name: apexpay-core-web
     env: python
-    runtime: python3.11
+    pythonVersion: 3.12.7   
     region: oregon
     plan: free
     branch: main
