@@ -16,6 +16,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -29,7 +30,8 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG')
-ALLOWED_HOSTS = ['fintech-app.azurewebsites.net', '127.0.0.1']
+APPEND_SLASH = True
+ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="127.0.0.1,localhost,0.0.0.0").split(",")
 
 # Application definition
 
@@ -67,7 +69,7 @@ MIDDLEWARE = [
   'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'fintech_api.urls'
+ROOT_URLCONF = 'apexpay_core.urls'
 
 TEMPLATES = [
     {
@@ -85,7 +87,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'fintech_api.wsgi.application'
+WSGI_APPLICATION = 'apexpay_core.wsgi.application'
 
 
 # Database
@@ -163,7 +165,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 
-CRSF_TRUSTED_ORIGINS = ["https://fintech-app.azurewebsites.net"]
+CSRF_TRUSTED_ORIGINS = ["https://apexpay-core.azurewebsites.net"]
 CORS_ALLOW_ALL_ORIGINS = True
 # If this is used then `CORS_ALLOWED_ORIGINS` will not have any effect
 CORS_ALLOW_CREDENTIALS = True
