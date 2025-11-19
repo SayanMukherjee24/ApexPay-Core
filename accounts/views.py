@@ -24,7 +24,6 @@ from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework.decorators import api_view, permission_classes
 
 
 # -------------------------------------------------------------------------
@@ -142,7 +141,6 @@ class ResendActivationLink(GenericAPIView):
         if user.is_active:
             return Response({"message": "User is already active"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # ⭐ BUILD ACTIVATION LINK USING settings.SITE_DOMAIN ⭐
         activation_link = (
             f"{settings.SITE_DOMAIN}/api/v1/auth/confirm-email/"
             f"{urlsafe_base64_encode(force_bytes(str(user.pk)))}/"
@@ -167,7 +165,9 @@ class ResendActivationLink(GenericAPIView):
 # -------------------------------------------------------------------------
 
 class ActivateEmail(GenericAPIView):
-    swagger_fake_view = True  # Prevent schema crash in Swagger
+    swagger_schema = None
+    swagger_fake_view = True
+    serializer_class = None
 
     def get(self, request, user_id, token):
         try:
@@ -204,7 +204,6 @@ class ResetPassword(GenericAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # ⭐ BUILD PASSWORD RESET LINK ⭐
         reset_link = (
             f"{settings.SITE_DOMAIN}/api/v1/auth/reset-password-confirm/"
             f"{urlsafe_base64_encode(force_bytes(str(user.pk)))}/"
@@ -255,7 +254,9 @@ class ConfirmPassword(GenericAPIView):
 # -------------------------------------------------------------------------
 
 class Logout(GenericAPIView):
-    swagger_fake_view = True  # fixes swagger error
+    swagger_schema = None
+    swagger_fake_view = True
+    serializer_class = None
 
     def post(self, request):
         logout(request)
@@ -267,6 +268,9 @@ class Logout(GenericAPIView):
 # -------------------------------------------------------------------------
 
 class Profile(GenericAPIView):
+    swagger_schema = None
+    swagger_fake_view = True
+    serializer_class = None
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
