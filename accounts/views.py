@@ -9,7 +9,12 @@ from django.conf import settings
 # App imports
 from accounts.services import create_user_wallet
 from accounts.tokens import account_activation_token
-from accounts.serializers import ResetSerializer, UserSerailizer, LoginSerializer, ResetPasswordSeriliazer
+from accounts.serializers import (
+    ResetSerializer,
+    UserSerailizer,
+    LoginSerializer,
+    ResetPasswordSeriliazer
+)
 from accounts.models import User
 
 # rest_framework imports
@@ -19,12 +24,12 @@ from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
-
-
-# ⭐ Added for profile API ⭐
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
 
+
+# -------------------------------------------------------------------------
+# REGISTER USER
+# -------------------------------------------------------------------------
 
 class Register(GenericAPIView):
     serializer_class = UserSerailizer
@@ -44,16 +49,21 @@ class Register(GenericAPIView):
             user.is_active = False
             user.save()
 
-            # SEND ACTIVATION EMAIL
+            # ⭐ BUILD ACTIVATION LINK USING settings.SITE_DOMAIN ⭐
+            activation_link = (
+                f"{settings.SITE_DOMAIN}/api/v1/auth/confirm-email/"
+                f"{urlsafe_base64_encode(force_bytes(str(user.pk)))}/"
+                f"{account_activation_token.make_token(user)}"
+            )
+
             subject = "Activate your account"
             message = (
                 f"Hi, {user.first_name} {user.last_name}!\n\n"
                 "Please click the link below to activate your account:\n\n"
-                f"http://localhost:8000/api/v1/auth/confirm-email/"
-                f"{urlsafe_base64_encode(force_bytes(str(user.pk)))}/"
-                f"{account_activation_token.make_token(user)}\n\n"
+                f"{activation_link}\n\n"
                 "Thank you for using our application!"
             )
+
             from_email = settings.EMAIL_HOST_USER or "no-reply@example.com"
             send_mail(subject, message, from_email, [user.email])
 
@@ -67,6 +77,10 @@ class Register(GenericAPIView):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
+
+# -------------------------------------------------------------------------
+# LOGIN USER
+# -------------------------------------------------------------------------
 
 class Login(GenericAPIView):
     serializer_class = LoginSerializer
@@ -84,7 +98,6 @@ class Login(GenericAPIView):
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
-        # Check password
         if check_password(data["password"], user.password):
             if user.is_active:
                 refresh = RefreshToken.for_user(user)
@@ -101,16 +114,21 @@ class Login(GenericAPIView):
                         },
                     }
                 )
+
             return Response(
                 {"message": "User is not active"},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
         return Response(
-            {"message": "Email or password is not correct."},
+            {"message": "Email or password is incorrect"},
             status=status.HTTP_401_UNAUTHORIZED,
         )
 
+
+# -------------------------------------------------------------------------
+# RESEND ACTIVATION LINK
+# -------------------------------------------------------------------------
 
 class ResendActivationLink(GenericAPIView):
     serializer_class = ResetSerializer
@@ -124,20 +142,29 @@ class ResendActivationLink(GenericAPIView):
         if user.is_active:
             return Response({"message": "User is already active"}, status=status.HTTP_400_BAD_REQUEST)
 
+        # ⭐ BUILD ACTIVATION LINK USING settings.SITE_DOMAIN ⭐
+        activation_link = (
+            f"{settings.SITE_DOMAIN}/api/v1/auth/confirm-email/"
+            f"{urlsafe_base64_encode(force_bytes(str(user.pk)))}/"
+            f"{account_activation_token.make_token(user)}"
+        )
+
         subject = "Activate your account"
         message = (
             f"Hi, {user.first_name} {user.last_name}!\n\n"
             "Please click the link below to activate your account:\n\n"
-            f"http://localhost:8000/api/v1/auth/confirm-email/"
-            f"{urlsafe_base64_encode(force_bytes(str(user.pk)))}/"
-            f"{account_activation_token.make_token(user)}\n\n"
-            "Thank you for using our application!"
+            f"{activation_link}\n\nThank you for using our application!"
         )
+
         from_email = settings.EMAIL_HOST_USER or "no-reply@example.com"
         send_mail(subject, message, from_email, [user.email])
 
         return Response({"message": "Email sent"}, status=status.HTTP_200_OK)
 
+
+# -------------------------------------------------------------------------
+# ACTIVATE EMAIL
+# -------------------------------------------------------------------------
 
 class ActivateEmail(GenericAPIView):
     swagger_fake_view = True  # Prevent schema crash in Swagger
@@ -158,6 +185,10 @@ class ActivateEmail(GenericAPIView):
         return Response({"message": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST)
 
 
+# -------------------------------------------------------------------------
+# RESET PASSWORD EMAIL
+# -------------------------------------------------------------------------
+
 class ResetPassword(GenericAPIView):
     serializer_class = ResetSerializer
 
@@ -169,23 +200,33 @@ class ResetPassword(GenericAPIView):
 
         if not user.is_active:
             return Response(
-                {"message": "User is not active. Request for an activation link."},
+                {"message": "User is not active. Request an activation link."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+        # ⭐ BUILD PASSWORD RESET LINK ⭐
+        reset_link = (
+            f"{settings.SITE_DOMAIN}/api/v1/auth/reset-password-confirm/"
+            f"{urlsafe_base64_encode(force_bytes(str(user.pk)))}/"
+            f"{account_activation_token.make_token(user)}"
+        )
 
         subject = "Reset Your Password"
         message = (
             f"Hi, {user.first_name} {user.last_name}!\n\n"
             "Click below to reset your password:\n\n"
-            f"http://localhost:8000/api/v1/auth/reset-password-confirm/"
-            f"{urlsafe_base64_encode(force_bytes(str(user.pk)))}/"
-            f"{account_activation_token.make_token(user)}\n\n"
+            f"{reset_link}\n\n"
         )
+
         from_email = settings.EMAIL_HOST_USER or "no-reply@example.com"
         send_mail(subject, message, from_email, [user.email])
 
         return Response({"message": "Check your mail to reset your password"}, status=status.HTTP_200_OK)
 
+
+# -------------------------------------------------------------------------
+# CONFIRM PASSWORD RESET
+# -------------------------------------------------------------------------
 
 class ConfirmPassword(GenericAPIView):
     serializer_class = ResetPasswordSeriliazer
@@ -209,6 +250,10 @@ class ConfirmPassword(GenericAPIView):
         return Response({"data": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
+# -------------------------------------------------------------------------
+# LOGOUT
+# -------------------------------------------------------------------------
+
 class Logout(GenericAPIView):
     swagger_fake_view = True  # fixes swagger error
 
@@ -216,6 +261,10 @@ class Logout(GenericAPIView):
         logout(request)
         return Response({"message": "Logout Successful"}, status=status.HTTP_200_OK)
 
+
+# -------------------------------------------------------------------------
+# USER PROFILE (JWT REQUIRED)
+# -------------------------------------------------------------------------
 
 class Profile(GenericAPIView):
     authentication_classes = [JWTAuthentication]

@@ -1,0 +1,14 @@
+# render.yaml
+services:
+  - type: web
+    name: apexpay-core-web
+    env: python
+    region: oregon
+    plan: free
+    branch: main
+    buildCommand: pip install -r requirements.txt && python manage.py migrate && python manage.py collectstatic --noinput
+    startCommand: gunicorn apexpay_core.wsgi:application --bind 0.0.0.0:$PORT
+    autoDeploy: true
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: '1'
